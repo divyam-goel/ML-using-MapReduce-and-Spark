@@ -66,18 +66,19 @@ public class Map extends Mapper<LongWritable, Text, Text, Text> {
 			groundTruth[i] = s;
 		}
 
-		// write labels of the k nearest points
 		Arrays.sort(groundTruth);
+		int flag = 0;
 		for(int i = 0; i < k - 1; i++){
 			if(groundTruth[i].equals(groundTruth[i+1])){
 				context.write(new Text("1"), new Text(groundTruth[i]));
+				flag = 1;
 				break;
 			}
 		}
 		
-		// if no majority found - break ties randomly
-		Random rand = new Random(4123);
-		int randomLabel = rand.nextInt(k);
-		context.write(new Text("1"), new Text("" + randomLabel));
+		// if no majority found
+		if(flag == 0) 
+			context.write(new Text("1"), new Text(label[0]));
+		
 	}
 }
