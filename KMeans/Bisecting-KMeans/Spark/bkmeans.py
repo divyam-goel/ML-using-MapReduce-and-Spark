@@ -9,15 +9,29 @@ from pyspark.sql import SparkSession
 
 def parseVector(line, split):
     '''
+    Input:
+        - line: String read from a file
+        - split: Parameter to split the string
+    
     Returns numpy array of each record with float values
     '''
+    return np.array([float(x) for x in line.split(split)])
     return np.array([float(x) for x in line.split(split)])
 
 
 def closestPoint(p, centers, type_):
     '''
-    Returns the closest centroid to 'p'
-    and the distance to the centroid for type-1
+    Input:
+        - p: Numpy Array
+        - centers: List
+        - type_: Integer value (1 or 2)
+            - Type 1: Each element of centers is a Numpy Array
+            - Type 2: Each element of centers is a tuple
+                containing a Numpy Array at index - [1][1]
+    
+    Returns the index of center closest to p
+     - Type 1: Also returns distance between closest
+        center and p
     '''
     bestIndex = 0
     closest = float("+inf")
