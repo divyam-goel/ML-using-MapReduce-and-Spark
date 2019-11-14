@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import sys
+import time
 
 import numpy as np
 from pyspark.sql import SparkSession
@@ -16,6 +17,7 @@ def parseVector(line, split):
 def closestPoint(p, centers, type_):
     '''
     Returns the closest centroid to 'p'
+    and the distance to the centroid for type-1
     '''
     bestIndex = 0
     closest = float("+inf")
@@ -27,30 +29,35 @@ def closestPoint(p, centers, type_):
         if tempDist < closest:
             closest = tempDist
             bestIndex = i
-    return bestIndex, closest
+    if type_ == 1:
+        return bestIndex, closest
+    elif type_ == 2:
+        return bestIndex
 
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print("Usage: kmeans <file> <no_of_clusters> <no_of_iterations> \
             <convergence_distance>", file=sys.stderr)
         sys.exit(-1)
 
+    start_time = time.time()
+    
     spark = SparkSession\
         .builder\
         .appName("PythonKMeans")\
         .getOrCreate()
 
     lines = spark.read.text(sys.argv[1]).rdd.map(lambda r: r[0])
-    data = lines.map(lambda p: parseVector(p, split=' '))
+    data = lines.map(lambda p: parseVector(p, split='\t'))
 
     K = int(sys.argv[2])
     NUM_ITER = int(sys.argv[3])
     CONVERGENCE_DIST = float(sys.argv[4])
     
-    # Initial number of clusters is 2
-    kPoints = data.takeSample(False, 2, 1)
+    # Initial number of clusters is 1
+    kPoints = data.takeSample(False, 1, 1)
 
     # Loop till K clusters exist
     while K > len(kPoints):
@@ -76,11 +83,11 @@ if __name__ == "__main__":
         kPoints_temp = maxSSEPoints.takeSample(False, 2, 1)
 
         # Iterate till Convergence or till MAX_NUM_ITERS
-        # tempDist = 1.0
-        iters = MAX_NUM_ITER
+        tempDist = 1.0
+        iters = NUM_ITER
             
-        while iters > 0 && tempDist > convergeDist:
-            print("\n\nLOOP: ", K, " - ", iters, "\n\n")
+        while iters > 0 and tempDist > CONVERGENCE_DIST:
+            print("\n\nLOOP: ", len(kPoints), " - ", NUM_ITER - iters + 1, "\n\n")
 
             closest_temp = maxSSEPoints.map(
                 lambda p: (closestPoint(p[1][1], kPoints_temp, 2), (p[1][1], 1)))
@@ -104,11 +111,12 @@ if __name__ == "__main__":
         kPoints.pop(maxSSECluster[0][0])
         kPoints.extend([x[1][1] for x in kPoints_temp])
 
-        # Update number of clusters left to add
-        K -= 1
-
     print("\nFinal centers:")
     for center in kPoints:
         print(center)
+
+    end_time = time.time()
+
+    print("\nTime taken: ", end_time - start_time, "\n")
 
     spark.stop()
