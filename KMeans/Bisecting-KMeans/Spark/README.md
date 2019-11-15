@@ -11,11 +11,11 @@
     - `hdfs dfs -mkdir -p input`
     - `hdfs dfs -put <path_to_data_file_on_your_local_filesystem> input`
   - Change your current directory to this directory
-  - Run the knn.py script
-    - `$SPARK_HOME/bin/spark-submit <path_to_the_knn_script> <path_to_data_file_in_hdfs>
+  - Run the bkmeans.py script
+    - `$SPARK_HOME/bin/spark-submit <path_to_the_bkmeans_script> <path_to_data_file_in_hdfs>
       <no_of_clusters> <no_of_iterations_for_each_bisection> <convergence_distance>`
     - Sample:
-      `$SPARK_HOME/bin/spark-submit ./knn.py input/TCL10M13D 5 3 0.1`
+      `$SPARK_HOME/bin/spark-submit ./bkmeans.py input/TCL10M13D 5 3 0.1`
 
 ### Notes:
   - The code is slightly complicated but well commented and can be easily understood.
