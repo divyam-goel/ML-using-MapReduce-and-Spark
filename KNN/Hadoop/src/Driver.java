@@ -25,6 +25,9 @@ public class Driver {
 	// read test file features
 	while((line = br.readLine()) != null){
 		
+		if (count == 100)
+			break;
+		
 		// if terminating character encounter
 		if(line.equals("") || line.charAt(0) == ' ')    
 			break;
@@ -51,6 +54,9 @@ public class Driver {
 
 		// output file for temporary computation
 		FileOutputFormat.setOutputPath(job, new Path("output_KNN"));
+		
+		// enabling performance profiling
+		job.setProfileEnabled(true);
 
 		// set relevant parameters
 		job.setJarByClass(Driver.class);
@@ -75,13 +81,15 @@ public class Driver {
 		conf.unset("num_features");
 		for(int i = 0; i < features.length; i++)
 			conf.unset("feat" + i);
+		
+		b.close();
 	}
 
 	// Print prediction accuracy
 	correctPredictions *= 100;
-	Float temp = (float) correctPredictions / count;
+	float temp = (float) correctPredictions / count;
 	System.out.println("\n---------------------");
-	System.out.println("Test Accuracy: " + temp.toString());
+	System.out.println("Test Accuracy: " + temp);
 	System.out.println("---------------------");
 	
 	// write test predictions to file
