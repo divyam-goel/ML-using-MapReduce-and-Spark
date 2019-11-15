@@ -67,14 +67,14 @@ if __name__ == "__main__":
             lambda x1, x2: x1 + x2)
 
         predict_label = k_nearest_predictions.takeOrdered(1,
-            key = lambda x: x[1])[0][0]
+            key = lambda x: -x[1])[0][0]
 
         if predict_label == true_label:
             count += 1
 
     end_time = time.time()
     
-    accuracy = float(count) / test_data.count()
+    accuracy = (float(count) / test_data.count()) * 100
     time_taken = end_time - start_time
 
     print "\nAccuracy: " + str(accuracy) + "%\n"
