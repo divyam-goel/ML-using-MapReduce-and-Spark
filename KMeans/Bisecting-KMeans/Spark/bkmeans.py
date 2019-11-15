@@ -63,6 +63,9 @@ if __name__ == "__main__":
         .appName("PythonKMeans")\
         .getOrCreate()
 
+    sc = spark.sparkContext
+    sc.setLogLevel("ERROR")
+
     lines = spark.read.text(sys.argv[1]).rdd.map(lambda r: r[0])
     data = lines.map(lambda p: parseVector(p, split='\t'))
 
@@ -101,14 +104,12 @@ if __name__ == "__main__":
         iters = NUM_ITER
             
         while iters > 0 and tempDist > CONVERGENCE_DIST:
-            print("\n\nLOOP: ", len(kPoints), " - ", NUM_ITER - iters + 1, "\n\n")
-
             closest_temp = maxSSEPoints.map(
                 lambda p: (closestPoint(p[1][1], kPoints_temp, 2), (p[1][1], 1)))
 
             # Compute sum and count of all points for each centroid
             pointStats = closest_temp.reduceByKey(
-                lambda p1_c1, p2_c2: (p1_c1[1] + p2_c2[1], p1_c1[0] + p2_c2[0]))
+                lambda p1_c1, p2_c2: (p1_c1[0] + p2_c2[0], p1_c1[1] + p2_c2[1]))
 
             newPoints = pointStats.map(
                 lambda st: (st[0], st[1][0] / st[1][1])).collect()
