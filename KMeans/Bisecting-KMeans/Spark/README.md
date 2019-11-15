@@ -7,7 +7,7 @@
  
  ## Steps to Run the Script
   - Start HDFS Namenode and Datanode Servers
-  - Add train and test data to HDFS
+  - Add data to HDFS
     - `hdfs dfs -mkdir -p input`
     - `hdfs dfs -put <path_to_data_file_on_your_local_filesystem> input`
   - Change your current directory to this directory
@@ -18,6 +18,8 @@
       `$SPARK_HOME/bin/spark-submit ./bkmeans.py input/TCL10M13D 5 3 0.1`
 
 ### Notes:
+  - The logger is currently set to error right now. To disable that comment out 
+    `sc.setLogLevel("ERROR")` in the script.
   - The code is slightly complicated but well commented and can be easily understood.
   - If your data is not tab separated, then simply change the value passed to split
     parameter of parseVector function.
