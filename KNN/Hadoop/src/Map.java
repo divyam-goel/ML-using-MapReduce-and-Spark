@@ -4,17 +4,17 @@ import java.util.*;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Mapper;
 
-public class Map extends Mapper<LongWritable, Text, Text, Text> {
+public class Map extends Mapper<LongWritable, Text, IntWritable, Text> {
 	public static int[] feat = null;
 	public static String groundTruth = null;
 	String[] label = {"Rad Flow", "Fpv Close", "Fpv Open", "High", "Bypass", "Bpv Close", "Bpv Open"};
-	public static ArrayList<String> distances = new ArrayList<String>();
+	public static TreeMap<Float, String> distances = new TreeMap<Float, String>(); // sorted by key
 	public static float min_dist = 0;
 	public static int num_features = 0;
 	public static int k = 0; // parameter of KNN
 	
 	@Override
-	public void setup(Context context) throws IOException, InterruptedException{
+	public void setup(Context context) throws IOException, InterruptedException {
 		num_features = context.getConfiguration().getInt("num_features", 1);
 		k = context.getConfiguration().getInt("k", 3);
 		
@@ -22,22 +22,19 @@ public class Map extends Mapper<LongWritable, Text, Text, Text> {
 		feat = new int[num_features];
 		for(int i = 0; i < num_features; i++)
 			feat[i] = context.getConfiguration().getInt("feat" + i, 0);
-		
 	}
 
 	// compute L2 distance between two points
-	public static float distance_l2(int[] feat, int[] test, int num) {
+	public static float distance_l2(int[] feat, int[] test) {
 		float distance = 0;
-		float val = 0;
 
-		for(int i = 0; i < num; i++)
-			val += (feat[i] - test[i]) * (feat[i] - test[i]);
+		for(int i = 0; i < feat.length; i++)
+			distance += Math.pow(feat[i] - test[i], 2);
 		
-		distance = (float) Math.sqrt(val);
 		return distance;
 	}
 
-	// mapper function: called for each training point for each test point
+	// mapper function: called for each training point
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 		String temp = value.toString();
 		temp = temp.replaceAll("\\s+", " ");
@@ -50,35 +47,20 @@ public class Map extends Mapper<LongWritable, Text, Text, Text> {
 		
 		groundTruth = characteristics[num_features];
 		String type = label[Integer.parseInt(groundTruth) - 1];
-		distances.add(String.valueOf(distance_l2(feat, test, num_features)) + type);
+		distances.put(distance_l2(feat, test), type);
 	}
 
 	@Override
-	public void cleanup(Context context) throws IOException, InterruptedException {
-		Collections.sort(distances);
-		String[] groundTruth = new String[k];
-		String str = "";
+	public void cleanup(Context context) throws IOException, InterruptedException  {
 
-		// get k nearest points to the test point
-		for(int i = 0; i < k; i++) {
-			str = distances.get(i);
-			String s = String.valueOf(str.replaceAll("[\\d.]", ""));
-			groundTruth[i] = s;
-		}
-
-		Arrays.sort(groundTruth);
-		int flag = 0;
-		for(int i = 0; i < k - 1; i++){
-			if(groundTruth[i].equals(groundTruth[i+1])){
-				context.write(new Text("1"), new Text(groundTruth[i]));
-				flag = 1;
+		// write labels for k nearest neighbours
+		int count = 0;
+		for(float key: distances.keySet()) {
+			if (count == k) 
 				break;
-			}
+			
+			context.write(new IntWritable(1), new Text(distances.get(key)));
+			count++;
 		}
-		
-		// if no majority found
-		if(flag == 0) 
-			context.write(new Text("1"), new Text(label[0]));
-		
 	}
 }
